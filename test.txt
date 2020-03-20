@@ -1,0 +1,130 @@
+SQL> @C:\Users\1166\Downloads\test.sql
+SQL> REM 1. Add the following constraint:
+SQL> REM Due to World War II, the nobel prize was NOT awarded during the year 1940 to 1942.
+SQL> 
+SQL> ALTER TABLE nobel
+     ADD CONSTRAINT year_check CHECK(year_award NOT BETWEEN 1940 AND 1942);
+     
+     Table altered.
+SQL> 
+SQL> REM ----------------------------------------
+> 
+SQL> REM in accordance to the given check constraint
+SQL> 
+SQL> insert into nobel values(867,'GILLY B. Laughlin','m','Che','Condenser matter',1998,'Started University','01-nov-1950','USA');
+
+1 row created.
+
+SQL> 
+SQL> REM violating the check constraint
+SQL> 
+SQL> insert into nobel values(395,'GILLYi B. Laughlin','m','Che','Condensier matter',1941,'Started University','01-nov-1950','USA');
+insert into nobel values(395,'GILLYi B. Laughlin','m','Che','Condensier matter',1941,'Started University','01-nov-1950','USA')
+*
+ERROR at line 1:
+ORA-02290: check constraint (1166.YEAR_CHECK) violated 
+
+
+SQL> 
+SQL> REM ----------------------------------------
+> REM 2. Display the laureates name with their age at the time of award for the Peace category.
+SQL> 
+SQL> SELECT name,ABS(EXTRACT(YEAR FROM dob)-year_award) AS age
+  2  FROM nobel;
+
+NAME                                  AGE                                                                                                                                                               
+------------------------------ ----------                                                                                                                                                               
+Robert B. Laughlin                     48                                                                                                                                                               
+Horst L Stormer                        49                                                                                                                                                               
+Daniel C. Tsui                         59                                                                                                                                                               
+Walter Kohn                            75                                                                                                                                                               
+John Pople                             73                                                                                                                                                               
+John Hume                              61                                                                                                                                                               
+David Trimble                          54                                                                                                                                                               
+Louis J Ignaroo                        57                                                                                                                                                               
+Amartya Sen                            65                                                                                                                                                               
+Jose Saramago                          76                                                                                                                                                               
+Eric A Cornell                         40                                                                                                                                                               
+
+NAME                                  AGE                                                                                                                                                               
+------------------------------ ----------                                                                                                                                                               
+Carl E Wieman                          50                                                                                                                                                               
+Ryoji Noyori                           63                                                                                                                                                               
+K Barry Sharpless                      60                                                                                                                                                               
+Kofi Annan                             63                                                                                                                                                               
+Joerge A Akeriof                       61                                                                                                                                                               
+V S Naipaul                            69                                                                                                                                                               
+Charles A Kao                          76                                                                                                                                                               
+Willard S Boyle                        85                                                                                                                                                               
+George E Smith                         79                                                                                                                                                               
+Venkatraman Ramakrishnan               57                                                                                                                                                               
+Ada E Yonath                           70                                                                                                                                                               
+
+NAME                                  AGE                                                                                                                                                               
+------------------------------ ----------                                                                                                                                                               
+Elizabeth H Blackburn                  61                                                                                                                                                               
+Carol W Greider                        48                                                                                                                                                               
+Barack H Obama                         48                                                                                                                                                               
+Oliver E Williamson                    77                                                                                                                                                               
+Elinor Ostrom                          76                                                                                                                                                               
+Herta Muller                           56                                                                                                                                                               
+GILLY B. Laughlin                      48                                                                                                                                                               
+GILLY B. Laughlin                      48                                                                                                                                                               
+GILLY B. Laughlin                      48                                                                                                                                                               
+
+31 rows selected.
+
+SQL> 
+SQL> REM ----------------------------------------
+> Rem 3. Display the laureates (name,gender,category,aff_role,country) whose name starts with A, D or H.
+SQL> REM Remove the laureate if he/she dont have any affiliations. Sort the result in ascendening order of name.
+SQL> 
+SQL> SELECT name,gender,category,aff_role,country
+  2  FROM nobel
+  3  WHERE SUBSTR(name,1,1) IN ('A','D','H') AND aff_role IS NOT NULL
+  4  ORDER BY name;
+
+NAME                           G CAT AFF_ROLE                       COUNTRY                                                                                                                             
+------------------------------ - --- ------------------------------ ----------                                                                                                                          
+Ada E Yonath                   f Che Weizmann Institute of Science  Isreal                                                                                                                              
+Amartya Sen                    m Eco Trinity College                India                                                                                                                               
+Daniel C. Tsui                 m Phy Princeton University           China                                                                                                                               
+David Trimble                  m Pea Ulster Unionist party Leader   Ireland                                                                                                                             
+Horst L Stormer                m Phy Columbia University            Germany                                                                                                                             
+
+SQL> 
+SQL> REM -----------------------------------------
+> REM 4. Display the university name(s) that has to its credit by having atleast 2 nobel laureate with them.
+SQL> 
+SQL> SELECT aff_role
+  2  FROM nobel
+  3  GROUP BY aff_role
+  4  HAVING COUNT(*)>=2;
+
+AFF_ROLE                                                                                                                                                                                                
+------------------------------                                                                                                                                                                          
+                                                                                                                                                                                                        
+Bell Laboratories                                                                                                                                                                                       
+Started University                                                                                                                                                                                      
+University of California                                                                                                                                                                                
+University of Colorado                                                                                                                                                                                  
+
+SQL> 
+SQL> REM -----------------------------------------
+> REM 5. Show the details (year award,category,field) where the award is shared among the laureates in the same category and field.
+SQL> REM Exclude the laureates from USA.
+SQL> 
+SQL> SELECT category,field
+  2  FROM nobel
+  3  WHERE country <> 'USA'
+  4  GROUP BY category,field
+  5  HAVING COUNT(*)>=2;
+
+CAT FIELD                                                                                                                                                                                               
+--- -------------------------                                                                                                                                                                           
+Phy Condensed matter                                                                                                                                                                                    
+Che Theoretical Chemistry                                                                                                                                                                               
+Pea Negotiation                                                                                                                                                                                         
+Che Biochemistry                                                                                                                                                                                        
+
+SQL> SPOOL OFF;
