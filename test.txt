@@ -25,6 +25,7 @@ ERROR at line 1:
 ORA-02290: check constraint (1166.YEAR_CHECK) violated 
 
 
+
 SQL> 
 SQL> REM ----------------------------------------
 > REM 2. Display the laureates name with their age at the time of award for the Peace category.
