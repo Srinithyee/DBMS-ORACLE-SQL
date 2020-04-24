@@ -1,0 +1,122 @@
+SQL> set echo on;
+SQL> set line 110;
+SQL> @C:\Desktop\trig.sql
+SQL> REM ==========================================
+SQL> REM	     PL/SQL-Triggers
+SQL> REM	     -Srinithyee S K
+SQL> REM	     -185001166
+SQL> REM ==========================================
+SQL> 
+SQL> REM 1.The date of arrival should be always later than or on the same date of departure.
+SQL> 
+SQL> CREATE OR REPLACE TRIGGER same_later_date
+  2  BEFORE INSERT OR UPDATE ON fl_schedule
+  3  FOR EACH ROW
+  4  BEGIN
+  5  	     IF (:NEW.departs > :NEW.arrives) OR (:OLD.arrives <:NEW.departs) OR (:OLD.departs > :NEW.arrives) THEN
+  6  		     RAISE_APPLICATION_ERROR(-20111,'VIOLATES THE ARRIVAL CRITERION');
+  7  	     END IF;
+  8  END;
+  9  /
+
+Trigger created.
+
+SQL> 
+SQL> REM ==VIOLATING THE CONDITION,RAISING TRIGGER==
+SQL> INSERT INTO fl_schedule VALUES('B6-474','23-apr-2005',1710,'22-apr-2005',2120,261.56);
+INSERT INTO fl_schedule VALUES('B6-474','23-apr-2005',1710,'22-apr-2005',2120,261.56)
+            *
+ERROR at line 1:
+ORA-20111: VIOLATES THE ARRIVAL CRITERION 
+ORA-06512: at "HR.SAME_LATER_DATE", line 3 
+ORA-04088: error during execution of trigger 'HR.SAME_LATER_DATE' 
+
+
+SQL> 
+SQL> DROP TRIGGER same_later_date;
+
+Trigger dropped.
+
+SQL> 
+SQL> REM 2.Flight number CX­7520 is scheduled only on Tuesday, Friday and Sunday.
+SQL> 
+SQL> CREATE OR REPLACE TRIGGER flightsch_day
+  2  BEFORE INSERT OR UPDATE ON fl_schedule
+  3  FOR EACH ROW
+  4  DECLARE
+  5  BEGIN
+  6   IF NOT ( TO_CHAR(:NEW.departs,'Dy','NLS_DATE_LANGUAGE=English') IN ('Tue','Fri','Sun')
+  7  		   AND :NEW.flno = 'CX7520' ) THEN
+  8  	 RAISE_APPLICATION_ERROR(-20000,'Flight number CX­7520 can be scheduled only on Tuesday, Friday and Sunday.');
+  9   END IF;
+ 10  END;
+ 11  /
+
+Trigger created.
+
+SQL> 
+SQL> REM ==VIOLATING INSERT SATURDAY==
+SQL> INSERT INTO fl_schedule VALUES('CX-7520','18-APR-20',1245,'18-APR-20',1850,450.25);
+INSERT INTO fl_schedule VALUES('CX-7520','18-APR-20',1245,'18-APR-20',1850,450.25)
+            *
+ERROR at line 1:
+ORA-20000: Flight number CX­7520 can be scheduled only on Tuesday, Friday and Sunday. 
+ORA-06512: at "HR.FLIGHTSCH_DAY", line 5 
+ORA-04088: error during execution of trigger 'HR.FLIGHTSCH_DAY' 
+
+
+SQL> 
+SQL> REM ==VIOLATING UPDATE SATURDAY==
+SQL> UPDATE fl_schedule SET departs = '19-APR-2020' WHERE flno = 'CX-7520' AND departs = '10-APR-2020';
+
+0 rows updated.
+
+SQL> 
+SQL> REM 3.An aircraft is assigned to a flight only if its cruising range is more than the distance of the flights’ route.
+SQL> 
+SQL> CREATE OR REPLACE TRIGGER assign_check
+  2  BEFORE INSERT OR UPDATE ON flights
+  3  FOR EACH ROW
+  4  DECLARE
+  5  	     cruise_range aircraft.cruisingrange%TYPE;
+  6  	     rt_distance routes.distance%TYPE;
+  7  BEGIN
+  8  	     SELECT air.cruisingrange INTO cruise_range
+  9  	     FROM aircraft air
+ 10  	     WHERE air.aid = :NEW.aid;
+ 11  
+ 12  	     SELECT rt.distance INTO rt_distance
+ 13  	     FROM routes rt
+ 14  	     WHERE rt.routeID = :NEW.rID;
+ 15  
+ 16  	     IF (rt_distance > cruise_range) THEN
+ 17  		     RAISE_APPLICATION_ERROR(-20001,'Violates Cruising range Requirement');
+ 18  	     END IF;
+ 19  END;
+ 20  /
+
+Trigger created.
+
+SQL> 
+SQL> REM AIRBUS:ID:3::CRUISING RANGE::7120
+SQL> REM ==VIOLATING THE REQUIREMENT==
+SQL> INSERT INTO routes VALUES('MQ198','California','San Diego',8056);
+
+1 row created.
+
+SQL> 
+SQL> INSERT INTO flights VALUES('8A-6577','MQ198',3);
+INSERT INTO flights VALUES('8A-6577','MQ198',3)
+            *
+ERROR at line 1:
+ORA-20001: Violates Cruising range Requirement 
+ORA-06512: at "HR.ASSIGN_CHECK", line 14 
+ORA-04088: error during execution of trigger 'HR.ASSIGN_CHECK' 
+
+
+SQL> 
+SQL> DROP TRIGGER assign_check;
+
+Trigger dropped.
+
+SQL> spool off;
